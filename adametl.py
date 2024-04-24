@@ -8,7 +8,36 @@ import pytz
 
 
 def query_database():
+    # Timezone setup for Eastern Time (can handle both EST and EDT)
     eastern = pytz.timezone('America/New_York')
+    utc = pytz.utc
+
+    # Current time in Eastern time zone
+    current_time_eastern = datetime.now(eastern)
+
+    # Determine if it's before or after 5:30 PM Eastern Time
+    if current_time_eastern.hour < 17 or (current_time_eastern.hour == 17 and current_time_eastern.minute < 30):
+        # If before 5:30 PM today, calculate start time for yesterday's 5:30 PM
+        start_time_eastern = eastern.localize(datetime(current_time_eastern.year, current_time_eastern.month, current_time_eastern.day, 17, 30, 0, 0)) - timedelta(days=1)
+    else:
+        # Otherwise, use today's 5:30 PM
+        start_time_eastern = eastern.localize(datetime(current_time_eastern.year, current_time_eastern.month, current_time_eastern.day, 17, 30, 0, 0))
+
+    # Calculate end time as 24 hours later
+    end_time_eastern = start_time_eastern + timedelta(days=1)
+
+    # Convert start and end times to UTC
+    start_time_utc = start_time_eastern.astimezone(utc)
+    end_time_utc = end_time_eastern.astimezone(utc)
+
+    print(f"Start Time in UTC: {start_time_utc}")
+    print(f"End Time in UTC: {end_time_utc}")
+
+    # Format times for PostgreSQL
+    start_time_str = start_time_utc.strftime('%Y-%m-%d %H:%M:%S')
+    end_time_str = end_time_utc.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Database connection
     connection = psycopg2.connect(
         host='sdm-trade-database.cqv8myf4frvr.us-east-2.rds.amazonaws.com',
         database='postgres',
@@ -16,28 +45,6 @@ def query_database():
         password='95I8N&ruZKBq'
     )
     cursor = connection.cursor()
-
-    # Get the current time
-    current_time = datetime.now()
-
-    # Calculate yesterday's 5:30 PM
-    if current_time.hour < 17 or (current_time.hour == 17 and current_time.minute < 30):
-        # If before 5:30 PM, go back to the previous day
-        start_time = current_time.replace(hour=17, minute=30, second=0, microsecond=0) - timedelta(days=1)
-    else:
-        # Otherwise, use today's date
-        start_time = current_time.replace(hour=17, minute=30, second=0, microsecond=0) - timedelta(days=1)
-
-    # Calculate today's 5:30 PM
-    end_time = start_time + timedelta(days=1)
-
-    print(start_time)
-    print(end_time)
-
-
-    # Format times for PostgreSQL
-    start_time_str = start_time.strftime('%Y-%m-%d %H:%M:%S')
-    end_time_str = end_time.strftime('%Y-%m-%d %H:%M:%S')
 
     # SQL query to fetch data
     query = f"""
