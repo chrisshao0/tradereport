@@ -15,21 +15,16 @@ def query_database():
     # Current time in Eastern time zone
     current_time_eastern = datetime.now(eastern)
 
-    # Determine if it's before or after 5:30 PM Eastern Time
-    if current_time_eastern.hour < 17 or (current_time_eastern.hour == 17 and current_time_eastern.minute < 30):
-        # If before 5:30 PM today, calculate start time for yesterday's 5:30 PM
-        start_time_eastern = eastern.localize(datetime(current_time_eastern.year, current_time_eastern.month, current_time_eastern.day, 17, 30, 0, 0)) - timedelta(days=1)
-    else:
-        # Otherwise, use today's 5:30 PM
-        start_time_eastern = eastern.localize(datetime(current_time_eastern.year, current_time_eastern.month, current_time_eastern.day, 17, 30, 0, 0))
+    #use today's 5:30 PM
+    end_time_eastern = eastern.localize(datetime(current_time_eastern.year, current_time_eastern.month, current_time_eastern.day, 17, 30, 0, 0))
 
     # Calculate end time as 24 hours later
-    end_time_eastern = start_time_eastern + timedelta(days=1)
+    start_time_eastern = end_time_eastern - timedelta(days=1)
 
     # Convert start and end times to UTC
     start_time_utc = start_time_eastern.astimezone(utc)
     end_time_utc = end_time_eastern.astimezone(utc)
-
+    print(f"Current time: {current_time_eastern}")
     print(f"Start Time in UTC: {start_time_utc}")
     print(f"End Time in UTC: {end_time_utc}")
 
