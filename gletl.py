@@ -2,7 +2,7 @@ import psycopg2
 import gspread
 import json
 from decimal import Decimal
-from datetime import datetime, timedelta  # Import datetime class and timedelta
+from datetime import datetime, timedelta
 from oauth2client.service_account import ServiceAccountCredentials
 import pytz
 
@@ -10,27 +10,23 @@ import pytz
 def query_database():
     # Timezone setup for Eastern Time (can handle both EST and EDT)
     eastern = pytz.timezone('America/New_York')
-    utc = pytz.utc
 
     # Current time in Eastern time zone
     current_time_eastern = datetime.now(eastern)
 
-    #use today's 5:30 PM
+    # Use today's 5:30 PM
     end_time_eastern = eastern.localize(datetime(current_time_eastern.year, current_time_eastern.month, current_time_eastern.day, 17, 30, 0, 0))
 
-    # Calculate end time as 24 hours later
+    # Calculate start time as 24 hours before end time
     start_time_eastern = end_time_eastern - timedelta(days=1)
 
-    # Convert start and end times to UTC
-    start_time_utc = start_time_eastern.astimezone(utc)
-    end_time_utc = end_time_eastern.astimezone(utc)
     print(f"Current time: {current_time_eastern}")
-    print(f"Start Time in UTC: {start_time_utc}")
-    print(f"End Time in UTC: {end_time_utc}")
+    print(f"Start Time in EST: {start_time_eastern}")
+    print(f"End Time in EST: {end_time_eastern}")
 
     # Format times for PostgreSQL
-    start_time_str = start_time_utc.strftime('%Y-%m-%d %H:%M:%S')
-    end_time_str = end_time_utc.strftime('%Y-%m-%d %H:%M:%S')
+    start_time_str = start_time_eastern.strftime('%Y-%m-%d %H:%M:%S')
+    end_time_str = end_time_eastern.strftime('%Y-%m-%d %H:%M:%S')
 
     # Database connection
     connection = psycopg2.connect(
@@ -45,9 +41,9 @@ def query_database():
     query = f"""
     SELECT *
     FROM public."adamTrades"
-    WHERE TO_TIMESTAMP(date, 'YYYY-MM-DD"T"HH24:MI:SS') BETWEEN 
-          TO_TIMESTAMP('{start_time_str}', 'YYYY-MM-DD"T"HH24:MI:SS') AND 
-          TO_TIMESTAMP('{end_time_str}', 'YYYY-MM-DD"T"HH24:MI:SS');
+    WHERE "createdAt" BETWEEN 
+          '{start_time_str}' AND 
+          '{end_time_str}';
     """
     cursor.execute(query)
     records = cursor.fetchall()
@@ -109,9 +105,6 @@ def update_google_sheet(data, headers):
 
     # Batch update for efficiency
     sheet.append_rows(formatted_data)
-
-
-
 
 if __name__ == '__main__':
     data, headers = query_database()
