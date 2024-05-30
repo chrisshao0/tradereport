@@ -25,8 +25,11 @@ def query_database():
     print(f"End Time in EST: {end_time_eastern}")
 
     # Format times for PostgreSQL
-    start_time_str = start_time_eastern.strftime('%Y-%m-%d %H:%M:%S')
-    end_time_str = end_time_eastern.strftime('%Y-%m-%d %H:%M:%S')
+    start_time_str = start_time_eastern.strftime('%Y-%m-%d %H:%M:%S%z')
+    end_time_str = end_time_eastern.strftime('%Y-%m-%d %H:%M:%S%z')
+
+    print(f"Start Time in EST (formatted): {start_time_str}")
+    print(f"End Time in EST (formatted): {end_time_str}")
 
     # Database connection
     connection = psycopg2.connect(
@@ -45,6 +48,7 @@ def query_database():
           '{start_time_str}' AND 
           '{end_time_str}';
     """
+    print(f"Executing query: {query}")
     cursor.execute(query)
     records = cursor.fetchall()
     
@@ -78,8 +82,7 @@ def get_credentials():
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
     creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scopes)
     return creds
-creds = get_credentials()
-client = gspread.authorize(creds)
+
 def update_google_sheet(data, headers):
     creds = get_credentials()
     client = gspread.authorize(creds)
